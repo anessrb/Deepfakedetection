@@ -1,0 +1,157 @@
+# DeepFake Detection - Default Configuration
+# ============================================
+
+model:
+  # Spatial branch (DINOv2 ViT-B/14)
+  backbone: "vit_base_patch14_dinov2.lvd142m"
+  spatial_embed_dim: 768
+  freeze_backbone: true
+  unfreeze_last_n_blocks: 4
+
+  # Frequency branch (LightCNN)
+  freq_embed_dim: 256
+  freq_conv_channels: [32, 64, 128, 256]
+
+  # Fusion MLP
+  fusion_hidden_dims: [512, 128]
+  fusion_dropout: [0.3, 0.2]
+
+  # Calibration
+  initial_temperature: 1.0
+
+training:
+  epochs: 30
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+
+  # Learning rates
+  lr_backbone: 1.0e-5
+  lr_head: 1.0e-4
+  weight_decay: 1.0e-4
+
+  # Scheduler (CosineAnnealingLR)
+  scheduler: "cosine"
+  lr_min: 1.0e-6
+  warmup_epochs: 2
+
+  # Loss
+  loss: "combined"        # "bce", "focal", "combined"
+  focal_gamma: 2.0
+  focal_alpha: 0.25
+  ece_lambda: 0.1         # Weight for ECE regularization term
+
+  # Early stopping
+  early_stopping_patience: 5
+  early_stopping_metric: "auc"  # "auc" or "loss"
+
+  # Checkpointing
+  checkpoint_dir: "checkpoints/"
+  save_every_n_epochs: 5
+
+  # Mixed precision
+  use_amp: true
+
+datasets:
+  # Root data directory
+  data_root: "data/"
+
+  # Dataset paths
+  ff_plus_plus:
+    root: "data/ff++/"
+    manipulations:
+      - "Deepfakes"
+      - "FaceSwap"
+      - "Face2Face"
+      - "NeuralTextures"
+    compression: "c23"   # c23 or c40
+
+  celeb_df:
+    root: "data/celeb_df/"
+
+  df40:
+    root: "data/df40/"
+    csv_manifest: null   # path to CSV if available, else null
+
+  wild_deepfake:
+    root: "data/wild_deepfake/"
+
+  # Train/val/test split
+  split_ratios:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+  # Sampling
+  max_samples_per_dataset: null   # null = use all
+  balance_classes: true
+
+augmentation:
+  img_size: 224
+
+  # Training augmentations
+  train:
+    horizontal_flip_p: 0.5
+    color_jitter:
+      brightness: 0.2
+      contrast: 0.2
+      saturation: 0.2
+      hue: 0.1
+      p: 0.5
+    jpeg_compression:
+      quality_lower: 30
+      quality_upper: 100
+      p: 0.5
+    gaussian_blur:
+      blur_limit: [3, 7]
+      sigma_limit: [0.1, 2.0]
+      p: 0.3
+    random_resized_crop:
+      scale: [0.8, 1.0]
+      ratio: [0.9, 1.1]
+    normalize:
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+
+  # Validation / inference transforms
+  val:
+    normalize:
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+
+evaluation:
+  batch_size: 64
+  num_workers: 4
+
+  # ECE bins
+  ece_n_bins: 15
+
+  # Datasets to evaluate cross-dataset generalization
+  cross_dataset_eval:
+    - "ff_plus_plus"
+    - "celeb_df"
+    - "df40"
+    - "wild_deepfake"
+
+  # Robustness evaluation settings
+  robustness:
+    jpeg_qualities: [30, 50, 70, 90, 100]
+    blur_sigmas: [0, 1, 2, 3, 5]
+    resize_scales: [0.25, 0.5, 0.75, 1.0]
+
+preprocessing:
+  fps: 1
+  max_frames: 300
+  face_size: 224
+  face_margin: 0.2     # Extra margin around detected face (fraction)
+  batch_size: 32       # Batch size for face detection
+
+inference:
+  threshold: 0.5       # Decision threshold
+  aggregate_video: "mean"  # "mean", "max", "voting"
+  save_gradcam: true
+  gradcam_alpha: 0.5
+
+logging:
+  level: "INFO"
+  log_file: "logs/training.log"
