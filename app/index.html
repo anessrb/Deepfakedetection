@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepGuard — AI Deepfake Detector</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="background-blur"></div>
+
+    <main class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <h1 class="logo-text">DeepGuard</h1>
+            </div>
+            <p class="subtitle">Advanced AI-Powered Deepfake Detection</p>
+        </header>
+
+        <section class="upload-section card">
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <span class="upload-icon">📤</span>
+                    <h3>Upload Media</h3>
+                    <p>Drag & drop or click to select (Image or Video)</p>
+                    <input type="file" id="file-input" accept="image/*,video/*" hidden>
+                </div>
+            </div>
+            <div id="preview-container" class="preview-container hidden">
+                <div id="media-preview-box"></div>
+                <div class="controls">
+                    <button id="analyze-btn" class="btn btn-primary">Analyze Media</button>
+                    <button id="reset-btn" class="btn btn-secondary">Reset</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="results-section" class="results-section hidden">
+            <div class="results-grid">
+                <div class="result-card card">
+                    <h3>Detection Result</h3>
+                    <div id="result-badge" class="badge">REAL</div>
+                    <div class="score-container">
+                        <div class="score-label">Fake Probability</div>
+                        <div class="progress-bar">
+                            <div id="score-fill" class="progress-fill"></div>
+                        </div>
+                        <div id="score-text" class="score-text">0.00%</div>
+                    </div>
+                </div>
+
+                <div id="visual-result-card" class="card">
+                    <h3 id="visual-title">AI Attention Map (Grad-CAM)</h3>
+                    <div class="visual-container">
+                        <img id="gradcam-image" src="" alt="Grad-CAM Visualization" class="hidden">
+                        <div id="video-results" class="hidden">
+                            <canvas id="temporal-chart"></canvas>
+                            <p class="chart-info">Temporal probability across sampled frames.</p>
+                        </div>
+                        <p id="visual-info" class="visual-info">Heatmap shows regions where the AI detected manipulation
+                            traces.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="loader" class="loader-overlay hidden">
+            <div class="loader"></div>
+            <p>Analyzing pixels...</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 DeepGuard AI · Powered by DINOv2 & Frequency Analysis</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
