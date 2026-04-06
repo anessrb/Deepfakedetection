@@ -95,8 +95,11 @@ class TemperatureScaling(nn.Module):
                 all_logits.append(logits.cpu())
                 all_labels.append(labels.cpu())
 
-        all_logits = torch.cat(all_logits)  # [N]
-        all_labels = torch.cat(all_labels)  # [N]
+        all_logits = torch.cat(all_logits).cpu()  # [N] on CPU
+        all_labels = torch.cat(all_labels).cpu()  # [N] on CPU
+
+        # Ensure temperature parameter is on the same device as logits (CPU)
+        self.temperature.data = self.temperature.data.cpu()
 
         if verbose:
             logger.info(
