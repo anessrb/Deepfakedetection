@@ -120,6 +120,12 @@ class DF40Dataset(DeepfakeDataset):
         samples = []
 
         real_dir = self.root / "real"
+        # Fallback: look for real images one level up (e.g. data/real/)
+        if not real_dir.exists():
+            fallback = self.root.parent / "real"
+            if fallback.exists():
+                real_dir = fallback
+                logger.info(f"real/ not found in {self.root}, using fallback: {real_dir}")
         fake_base = self.root / "fake"
 
         # Real samples
