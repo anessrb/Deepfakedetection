@@ -1,0 +1,411 @@
+\documentclass[final]{beamer}
+
+\usepackage[scale=1.24, size=a1, orientation=portrait]{beamerposter}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{enumitem}
+
+% ─── Couleurs ────────────────────────────────────────────────────────────────
+\definecolor{mainblue}{RGB}{0,84,166}
+\definecolor{lightblue}{RGB}{210,228,255}
+\definecolor{darkgray}{RGB}{50,50,50}
+\definecolor{accentorange}{RGB}{230,100,20}
+\definecolor{greentick}{RGB}{30,160,80}
+\definecolor{blockbg}{RGB}{240,245,255}
+
+% ─── Thème Beamer ────────────────────────────────────────────────────────────
+\usetheme{default}
+\setbeamercolor{block title}{fg=white,bg=mainblue}
+\setbeamercolor{block body}{fg=darkgray,bg=blockbg}
+\setbeamercolor{block title alerted}{fg=white,bg=accentorange}
+\setbeamercolor{block body alerted}{fg=darkgray,bg=blockbg}
+\setbeamerfont{block title}{size=\large,series=\bfseries}
+\setbeamerfont{block body}{size=\normalsize}
+\setbeamertemplate{navigation symbols}{}
+
+% ─── En-tête personnalisé ────────────────────────────────────────────────────
+\setbeamertemplate{headline}{
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth]{headline}
+    \begin{tikzpicture}[remember picture]
+      \fill[mainblue] (0,0) rectangle (\paperwidth, 7cm);
+      \node[anchor=center, text=white] at (0.5\paperwidth, 5cm)
+        {\fontsize{52}{60}\bfseries Détection de Deepfakes};
+      \node[anchor=center, text=white!90] at (0.5\paperwidth, 3.2cm)
+        {\fontsize{28}{34}\selectfont Approche hybride : Vision Transformer (DINOv2) + Analyse Fréquentielle};
+      \node[anchor=center, text=white!75] at (0.5\paperwidth, 1.5cm)
+        {\fontsize{20}{24}\selectfont Projet M2 IA --- Université --- 2025--2026};
+    \end{tikzpicture}
+  \end{beamercolorbox}
+}
+
+\setbeamertemplate{footline}{
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth, ht=1.8cm]{headline}
+    \begin{tikzpicture}
+      \fill[mainblue] (0,0) rectangle (\paperwidth, 1.8cm);
+      \node[anchor=west, text=white] at (1cm, 0.9cm)
+        {\small \textbf{Code :} github.com/anessrb/deepfakedetection};
+      \node[anchor=center, text=white] at (0.5\paperwidth, 0.9cm)
+        {\small Bibliothèques : PyTorch $\geq$ 2.1 \textbullet\ timm $\geq$ 0.9 \textbullet\ albumentations $\geq$ 1.3 \textbullet\ scikit-learn};
+      \node[anchor=east, text=white] at (\paperwidth-1cm, 0.9cm)
+        {\small 2026};
+    \end{tikzpicture}
+  \end{beamercolorbox}
+}
+
+% ─── Macro bloc coloré ───────────────────────────────────────────────────────
+\newcommand{\cbox}[3]{%
+  \begin{tikzpicture}
+    \node[fill=#1, rounded corners=6pt, inner sep=8pt, text width=#2, align=center]
+      {\color{white}\bfseries #3};
+  \end{tikzpicture}%
+}
+
+\begin{document}
+\begin{frame}[t]
+\vspace{0.5cm}
+
+% ════════════════════════════════════════════════════════════════════════════
+%  LIGNE 1 : Introduction + Architecture
+% ════════════════════════════════════════════════════════════════════════════
+\begin{columns}[t]
+
+%% ── Col gauche : Introduction ──────────────────────────────────────────────
+\begin{column}{0.31\linewidth}
+
+\begin{block}{Introduction}
+Un \textbf{deepfake} est un contenu audiovisuel falsifié par des réseaux de neurones
+(GAN, diffusion) qui peut tromper l'œil humain.\\[6pt]
+\textbf{Enjeux :}
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item Désinformation et manipulation politique
+  \item Usurpation d'identité
+  \item Atteinte à la vie privée
+\end{itemize}
+\vspace{6pt}
+\textbf{Objectif :} concevoir un détecteur automatique robuste, calibré et interprétable,
+capable de généraliser sur des datasets et des compressions variées.
+\end{block}
+
+\vspace{0.4cm}
+
+\begin{block}{Datasets utilisés}
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Dataset} & \textbf{Rôle} & \textbf{Type}\\
+\midrule
+FaceForensics++ & Train & 4 manipulations\\
+AV-Deepfake1M  & Train & In-the-wild\\
+DF40           & Train/Val & 40 méthodes\\
+Celeb-DF v2    & Test & Face-swap réaliste\\
+WildDeepfake   & Test & In-the-wild\\
+GenFace        & Test & Diffusion\\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+
+Division : \textbf{70\%} train / \textbf{15\%} val / \textbf{15\%} test (seed=42)\\
+Équilibrage par \textit{WeightedRandomSampler}.
+\end{block}
+
+\vspace{0.4cm}
+
+\begin{block}{Pré-traitement}
+\begin{enumerate}[leftmargin=1.4em, itemsep=3pt]
+  \item Extraction de frames (1 fps, max 300)
+  \item Détection de visage (OpenCV Haar Cascade)
+  \item Recadrage 224×224 + marge 20\%
+  \item Normalisation ImageNet
+\end{enumerate}
+\vspace{6pt}
+\textbf{Augmentations (entraînement) :}
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item RandomResizedCrop (scale 0.8--1.0)
+  \item HorizontalFlip $p=0.5$
+  \item ColorJitter (brightness/contrast/saturation 0.2)
+  \item JPEG compression (qualité 30--100, $p=0.5$)
+  \item GaussianBlur ($\sigma \in [0.1, 2.0]$, $p=0.3$)
+\end{itemize}
+\end{block}
+
+\end{column}
+
+%% ── Col centre : Architecture ──────────────────────────────────────────────
+\begin{column}{0.36\linewidth}
+
+\begin{block}{Architecture du Modèle}
+\centering
+\begin{tikzpicture}[
+  node distance=0.55cm,
+  box/.style={draw=mainblue, fill=lightblue, rounded corners=5pt,
+              minimum width=5.5cm, minimum height=0.85cm,
+              font=\small\bfseries, text=darkgray, align=center},
+  sbox/.style={draw=accentorange, fill=accentorange!15, rounded corners=5pt,
+               minimum width=2.5cm, minimum height=0.85cm,
+               font=\small\bfseries, align=center},
+  arr/.style={->, thick, mainblue},
+  sarr/.style={->, thick, accentorange},
+  ]
+
+  % Input
+  \node[box, fill=mainblue!80, text=white] (inp) {Image d'entrée $224\times224\times3$};
+
+  % Face det
+  \node[box, below=of inp] (fd) {Détection de visage (OpenCV)};
+  \draw[arr] (inp) -- (fd);
+
+  % Split
+  \node[sbox, below left=0.7cm and 1.5cm of fd, text=mainblue] (sp) {Branche\\Spatiale};
+  \node[sbox, below right=0.7cm and 1.5cm of fd, text=accentorange] (fr) {Branche\\Fréquentielle};
+  \draw[arr] (fd.south) -- ++(0,-0.25) -| (sp.north);
+  \draw[arr] (fd.south) -- ++(0,-0.25) -| (fr.north);
+
+  % Spatial details
+  \node[box, below=0.5cm of sp, minimum width=4.5cm] (dino) {DINOv2 ViT-B/14\\(4 derniers blocs)};
+  \node[box, below=0.45cm of dino, minimum width=4.5cm] (cls) {CLS token\\$\mathbf{f}_s \in \mathbb{R}^{768}$};
+  \draw[arr] (sp) -- (dino);
+  \draw[arr] (dino) -- (cls);
+
+  % Freq details
+  \node[box, below=0.5cm of fr, minimum width=4.5cm] (fft) {FFT 2D + DCT-II\\$\to$ 2 canaux $224\times224$};
+  \node[box, below=0.45cm of fft, minimum width=4.5cm] (lcnn) {LightCNN\\{[32,64,128,256]}};
+  \node[box, below=0.45cm of lcnn, minimum width=4.5cm] (femb) {$\mathbf{f}_f \in \mathbb{R}^{256}$};
+  \draw[arr] (fr) -- (fft);
+  \draw[arr] (fft) -- (lcnn);
+  \draw[arr] (lcnn) -- (femb);
+
+  % Concat
+  \node[box, below=1.9cm of fd, fill=greentick!80, text=white, minimum width=5.8cm] (cat)
+    {Concaténation $[\mathbf{f}_s \| \mathbf{f}_f] \in \mathbb{R}^{1024}$};
+  \draw[arr] (cls.south) -- ++(0,-0.3) -| (cat.north west);
+  \draw[arr] (femb.south) -- ++(0,-0.3) -| (cat.north east);
+
+  % MLP
+  \node[box, below=0.5cm of cat] (mlp) {Fusion MLP : $1024\!\to\!512\!\to\!128\!\to\!1$};
+  \draw[arr] (cat) -- (mlp);
+
+  % Temp
+  \node[box, below=0.45cm of mlp] (ts) {Temperature Scaling ($T^*$)};
+  \draw[arr] (mlp) -- (ts);
+
+  % Output
+  \node[box, below=0.45cm of ts, fill=accentorange, text=white] (out)
+    {$P(\text{fake}) \in [0,1]$};
+  \draw[arr] (ts) -- (out);
+
+\end{tikzpicture}
+\end{block}
+
+\vspace{0.4cm}
+
+\begin{alertblock}{Branche Fréquentielle — Détail}
+Les deepfakes laissent des \textbf{artefacts invisibles à l'œil} mais détectables en fréquence.
+
+\vspace{6pt}
+\textbf{FFT 2D} (spectre log-magnitude centré) :
+$$S_{\text{FFT}}(u,v) = \log\!\bigl(1 + |\mathcal{F}\{I_{\text{gray}}\}(u,v)|\bigr)$$
+
+\textbf{DCT-II} (via extension symétrique + FFT) :
+$$S_{\text{DCT}}(k) = \sum_{n=0}^{N-1} x_n \cos\!\Bigl(\tfrac{\pi k}{2N}(2n+1)\Bigr)$$
+
+Les deux cartes ($224\!\times\!224$) sont empilées en une entrée \textbf{2 canaux} pour le LightCNN.
+\end{alertblock}
+
+\end{column}
+
+%% ── Col droite : Entraînement ──────────────────────────────────────────────
+\begin{column}{0.31\linewidth}
+
+\begin{block}{Entraînement}
+\textbf{Optimiseur :} AdamW avec taux d'apprentissage différentiels :
+\vspace{4pt}
+\begin{center}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Groupe} & \textbf{LR}\\
+\midrule
+Backbone (ViT blocs) & $10^{-5}$\\
+Tête (LightCNN + MLP) & $10^{-4}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{6pt}
+\textbf{Scheduler :} LinearWarmup (2 epochs) + CosineAnnealing ($\eta_{\min}=10^{-6}$)\\[4pt]
+\textbf{Précision mixte :} AMP (autocast CUDA)\\[4pt]
+\textbf{Gradient clipping :} $\|\nabla\|_2 \leq 1.0$\\[4pt]
+\textbf{Early stopping :} patience = 5 epochs (sur AUC val)
+
+\vspace{8pt}
+\textbf{Fonction de perte combinée :}
+$$\mathcal{L} = \mathcal{L}_{\text{Focal}} + \lambda_{\text{ECE}} \cdot \mathcal{L}_{\text{ECE}}$$
+
+\textit{Focal Loss} (Lin et al., 2017), $\gamma=2$, $\alpha=0.25$ :
+$$\mathcal{L}_{\text{Focal}} = -\alpha_t(1-p_t)^\gamma \log(p_t)$$
+
+\textit{ECE Loss} différentiable (15 bins), $\lambda=0.1$ :
+$$\mathcal{L}_{\text{ECE}} = \sum_{m=1}^{M} \frac{|B_m|}{n}\bigl|\overline{\text{conf}}(B_m) - \overline{\text{acc}}(B_m)\bigr|$$
+\end{block}
+
+\vspace{0.4cm}
+
+\begin{block}{Calibration — Temperature Scaling}
+Après l'entraînement, on apprend un scalaire $T^*$ par minimisation de la NLL
+sur la validation (LBFGS) :
+$$p_{\text{cal}} = \sigma\!\Bigl(\frac{z}{T^*}\Bigr), \quad T^* = \arg\min_T \mathcal{L}_{\text{NLL}}\!\Bigl(\tfrac{z}{T}, y\Bigr)$$
+$T>1$ réduit la confiance ; $T<1$ l'augmente. La courbe de fiabilité
+doit se rapprocher de la diagonale après calibration.
+\end{block}
+
+\vspace{0.4cm}
+
+\begin{block}{Métriques d'évaluation}
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Métrique} & \textbf{Description}\\
+\midrule
+AUC-ROC & Aire sous la courbe ROC\\
+ECE & Erreur de calibration attendue\\
+Accuracy & Taux de bonne classification\\
+AP & Aire sous la courbe Précision-Rappel\\
+TPR@95 & Seuil pour 95\% de vrai-positifs\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{6pt}
+\textbf{Évaluation de robustesse :}
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item JPEG : qualités [30, 50, 70, 90, 100]
+  \item Flou Gaussien : $\sigma \in \{0, 1, 2, 3, 5\}$
+  \item Redimensionnement : échelles [0.25, 0.5, 0.75, 1.0]
+\end{itemize}
+\end{block}
+
+\end{column}
+\end{columns}
+
+\vspace{0.6cm}
+
+% ════════════════════════════════════════════════════════════════════════════
+%  LIGNE 2 : Résultats + Explicabilité + Perspectives
+% ════════════════════════════════════════════════════════════════════════════
+\begin{columns}[t]
+
+%% ── Résultats attendus ─────────────────────────────────────────────────────
+\begin{column}{0.31\linewidth}
+\begin{block}{Résultats attendus (cross-dataset)}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Dataset test} & \textbf{AUC} & \textbf{Acc.} & \textbf{ECE}\\
+\midrule
+FaceForensics++ & $\sim$0.98 & $\sim$0.95 & $<$0.03\\
+Celeb-DF v2     & $\sim$0.92 & $\sim$0.88 & $<$0.05\\
+DF40            & $\sim$0.89 & $\sim$0.85 & $<$0.06\\
+WildDeepfake    & $\sim$0.87 & $\sim$0.83 & $<$0.07\\
+\bottomrule
+\end{tabular}
+\vspace{6pt}
+
+\textit{Valeurs indicatives — à compléter après entraînement.}
+\vspace{6pt}
+
+\textbf{Hyperparamètres clés :}\\[4pt]
+\begin{tabular}{@{}ll@{}}
+Epochs & 30 (early stop)\\
+Batch size & 32\\
+Weight decay & $10^{-4}$\\
+Dropout MLP & [0.3, 0.2]\\
+drop\_path & 0.1\\
+\end{tabular}
+\end{block}
+\end{column}
+
+%% ── Explicabilité ──────────────────────────────────────────────────────────
+\begin{column}{0.36\linewidth}
+\begin{block}{Explicabilité — Grad-CAM sur ViT}
+\textbf{Vision Transformer Grad-CAM} permet de localiser les régions faciales
+qui ont le plus contribué à la décision du modèle.
+
+\vspace{8pt}
+\begin{center}
+\begin{tikzpicture}
+  % Fake image box
+  \node[draw=accentorange, thick, rounded corners=4pt,
+        minimum width=5cm, minimum height=3.5cm, fill=accentorange!10] (img)
+    at (0,0) {};
+  \node[font=\small\bfseries, text=accentorange] at (0, 0)
+    {Image Fake\\[2pt]{\footnotesize (visage synthétisé)}};
+
+  % Arrow
+  \draw[->, ultra thick, mainblue] (2.7,0) -- (4.3,0)
+    node[midway, above, font=\footnotesize, text=mainblue] {Grad-CAM};
+
+  % Heatmap box
+  \node[draw=greentick, thick, rounded corners=4pt,
+        minimum width=5cm, minimum height=3.5cm, fill=greentick!10] (heat)
+    at (7.1,0) {};
+  \node[font=\small\bfseries, text=greentick] at (7.1, 0)
+    {Carte de chaleur\\[2pt]{\footnotesize (zones suspectes)}};
+
+  % Labels
+  \node[font=\tiny, text=darkgray] at (0,-2.2) {$P(\text{fake})=0.94$};
+  \node[font=\tiny, text=darkgray] at (7.1,-2.2) {Contours / texture peau};
+\end{tikzpicture}
+\end{center}
+
+\vspace{4pt}
+La carte est superposée à l'image originale avec $\alpha=0.5$.\\
+Méthode : \textbf{Attention Rollout} + gradients sur le bloc ViT cible.
+\end{block}
+\end{column}
+
+%% ── Perspectives ───────────────────────────────────────────────────────────
+\begin{column}{0.31\linewidth}
+\begin{block}{Perspectives}
+\begin{itemize}[leftmargin=1.4em, itemsep=5pt]
+  \item[\textcolor{mainblue}{\textbullet}]
+    \textbf{Fine-tuning complet} du backbone DINOv2 sur données deepfakes massives
+  \item[\textcolor{mainblue}{\textbullet}]
+    Intégration de datasets de \textbf{diffusion} (Stable Diffusion, FLUX, Midjourney)
+  \item[\textcolor{mainblue}{\textbullet}]
+    \textbf{Détection vidéo temporelle} avec attention inter-frames (ViViT)
+  \item[\textcolor{mainblue}{\textbullet}]
+    \textbf{Déploiement API REST} avec FastAPI + conteneurisation Docker
+  \item[\textcolor{mainblue}{\textbullet}]
+    Étude de la \textbf{robustesse adversariale} (attaques FGSM, PGD)
+  \item[\textcolor{mainblue}{\textbullet}]
+    Réduction du modèle par \textbf{distillation} pour inférence mobile
+\end{itemize}
+
+\vspace{10pt}
+\begin{block}{Références}
+\tiny
+[1] Caron et al. (2021). \textit{Emerging properties in self-supervised ViT.} ICCV.\\
+[2] Lin et al. (2017). \textit{Focal Loss for Dense Object Detection.} ICCV.\\
+[3] Guo et al. (2017). \textit{On calibration of modern neural networks.} ICML.\\
+[4] Rossler et al. (2019). \textit{FaceForensics++.} ICCV.\\
+[5] Li et al. (2020). \textit{Celeb-DF: A Large-scale Challenging Dataset.} CVPR.\\
+[6] He et al. (2024). \textit{DF40: Toward Next-Generation Deepfake Detection.}
+\end{block}
+\end{block}
+\end{column}
+
+\end{columns}
+
+\end{frame}
+\end{document}
