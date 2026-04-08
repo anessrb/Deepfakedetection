@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Poster — Détection de Deepfakes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Inter',sans-serif;background:#f0f2f5;display:flex;justify-content:center;padding:20px;}
+  .poster{width:900px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+
+  /* HEADER */
+  header{background:linear-gradient(135deg,#00439c,#0066cc);color:white;padding:36px 40px 28px;text-align:center;}
+  header h1{font-size:2.6rem;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;}
+  header h2{font-size:1.2rem;font-weight:400;opacity:.88;margin-bottom:8px;}
+  header p{font-size:.95rem;opacity:.72;}
+
+  /* BODY */
+  .body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;}
+  .col{padding:18px 16px;border-right:1px solid #e4e8f0;}
+  .col:last-child{border-right:none;}
+
+  /* BLOCKS */
+  .block{background:#f4f7ff;border-radius:8px;margin-bottom:14px;overflow:hidden;}
+  .block-title{background:#00439c;color:white;font-size:.82rem;font-weight:700;padding:7px 12px;letter-spacing:.3px;text-transform:uppercase;}
+  .block-title.orange{background:#e06414;}
+  .block-title.green{background:#1e9e4f;}
+  .block-body{padding:12px 14px;font-size:.82rem;line-height:1.6;color:#2a2a3a;}
+
+  /* ARCH DIAGRAM */
+  .arch{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0;}
+  .arch-box{background:#d2e4ff;border:1.5px solid #00439c;border-radius:6px;padding:5px 12px;
+             font-size:.75rem;font-weight:600;color:#00439c;text-align:center;width:200px;}
+  .arch-box.dark{background:#00439c;color:white;}
+  .arch-box.orange{background:#e06414;color:white;border-color:#e06414;}
+  .arch-box.green{background:#1e9e4f;color:white;border-color:#1e9e4f;}
+  .arch-split{display:flex;gap:12px;width:100%;}
+  .arch-col{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;}
+  .arch-box.sm{width:160px;font-size:.72rem;}
+  .arch-arrow{color:#00439c;font-size:1.1rem;line-height:1;}
+
+  /* FORMULA */
+  .formula{background:#fff8f0;border-left:3px solid #e06414;padding:8px 10px;
+            border-radius:0 6px 6px 0;margin:8px 0;font-size:.78rem;font-style:italic;color:#333;}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:.76rem;margin-top:6px;}
+  th{background:#00439c;color:white;padding:5px 8px;text-align:left;}
+  td{padding:5px 8px;border-bottom:1px solid #dde3f0;color:#2a2a3a;}
+  tr:nth-child(even) td{background:#eef2fb;}
+
+  /* TAG */
+  .tag{display:inline-block;background:#00439c;color:white;border-radius:4px;
+       padding:2px 8px;font-size:.72rem;font-weight:600;margin:2px 2px 2px 0;}
+  .tag.orange{background:#e06414;}
+  .tag.green{background:#1e9e4f;}
+
+  /* LIST */
+  ul,ol{padding-left:1.2em;}
+  li{margin-bottom:3px;}
+
+  /* BOTTOM ROW */
+  .bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:2px solid #e4e8f0;}
+
+  /* GRADCAM DEMO */
+  .gradcam-demo{display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 0;}
+  .face-box{width:100px;height:80px;border-radius:8px;display:flex;align-items:center;
+             justify-content:center;font-size:.72rem;font-weight:700;text-align:center;padding:8px;}
+  .face-real{background:#ffeaea;border:2px solid #e06414;color:#e06414;}
+  .face-heat{background:linear-gradient(135deg,#ffe082,#ff5722,#b71c1c);color:white;border:2px solid #b71c1c;}
+  .arrow-big{font-size:1.6rem;color:#00439c;font-weight:900;}
+
+  /* FOOTER */
+  footer{background:#00439c;color:white;padding:10px 24px;display:flex;
+         justify-content:space-between;align-items:center;font-size:.75rem;}
+  footer a{color:#9ecfff;}
+
+  /* METRIC CHIPS */
+  .metric-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .metric{background:#00439c;color:white;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600;}
+  .metric.val{background:#1e9e4f;}
+</style>
+</head>
+<body>
+<div class="poster">
+
+<!-- ══════════ HEADER ══════════ -->
+<header>
+  <h1>Détection de Deepfakes</h1>
+  <h2>Approche hybride : Vision Transformer (DINOv2) + Analyse Fréquentielle (FFT/DCT)</h2>
+  <p>Projet M2 Intelligence Artificielle &nbsp;·&nbsp; 2025–2026 &nbsp;·&nbsp; github.com/anessrb/deepfakedetection</p>
+</header>
+
+<!-- ══════════ LIGNE 1 ══════════ -->
+<div class="body">
+
+  <!-- COL 1 : Introduction -->
+  <div class="col">
+
+    <div class="block">
+      <div class="block-title">Introduction</div>
+      <div class="block-body">
+        Un <strong>deepfake</strong> est un contenu audiovisuel falsifié par des réseaux de neurones
+        (GAN, modèles de diffusion) capable de tromper l'œil humain.<br><br>
+        <strong>Enjeux :</strong>
+        <ul>
+          <li>Désinformation &amp; manipulation politique</li>
+          <li>Usurpation d'identité</li>
+          <li>Atteinte à la vie privée</li>
+        </ul>
+        <br>
+        <strong>Objectif :</strong> concevoir un détecteur <em>robuste, calibré et interprétable</em>
+        généralisant sur différents datasets et compressions.
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Datasets utilisés</div>
+      <div class="block-body">
+        <table>
+          <tr><th>Dataset</th><th>Rôle</th><th>Type</th></tr>
+          <tr><td>FaceForensics++</td><td><span class="tag">Train</span></td><td>4 manipulations</td></tr>
+          <tr><td>AV-Deepfake1M</td><td><span class="tag">Train</span></td><td>In-the-wild</td></tr>
+          <tr><td>DF40</td><td><span class="tag">Train</span></td><td>40 méthodes</td></tr>
+          <tr><td>Celeb-DF v2</td><td><span class="tag green">Test</span></td><td>Face-swap réaliste</td></tr>
+          <tr><td>WildDeepfake</td><td><span class="tag green">Test</span></td><td>In-the-wild</td></tr>
+          <tr><td>GenFace</td><td><span class="tag green">Test</span></td><td>Diffusion</td></tr>
+        </table>
+        <br>
+        Division : <strong>70%</strong> train / <strong>15%</strong> val / <strong>15%</strong> test
+        &nbsp;·&nbsp; seed = 42
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Pré-traitement</div>
+      <div class="block-body">
+        <ol>
+          <li>Extraction de frames (1 fps, max 300)</li>
+          <li>Détection visage — OpenCV Haar Cascade</li>
+          <li>Recadrage 224×224 + marge 20%</li>
+          <li>Normalisation ImageNet</li>
+        </ol>
+        <br>
+        <strong>Augmentations (train) :</strong><br>
+        <div class="metric-row">
+          <span class="metric">RandomResizedCrop</span>
+          <span class="metric">HorizontalFlip p=0.5</span>
+          <span class="metric">ColorJitter</span>
+          <span class="metric">JPEG [30–100]</span>
+          <span class="metric">GaussianBlur σ∈[0.1,2]</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COL 2 : Architecture -->
+  <div class="col">
+
+    <div class="block">
+      <div class="block-title">Architecture du Modèle</div>
+      <div class="block-body">
+        <div class="arch">
+          <div class="arch-box dark">Image d'entrée 224×224×3</div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-box">Détection de visage (OpenCV)</div>
+          <div class="arch-arrow">↓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓</div>
+          <div class="arch-split">
+            <div class="arch-col">
+              <div class="arch-box sm" style="background:#d2e4ff;color:#00439c;border-color:#00439c">🧠 Branche Spatiale</div>
+              <div class="arch-arrow">↓</div>
+              <div class="arch-box sm">DINOv2 ViT-B/14<br>(4 derniers blocs)</div>
+              <div class="arch-arrow">↓</div>
+              <div class="arch-box sm">CLS token<br><strong>f<sub>s</sub> ∈ ℝ⁷⁶⁸</strong></div>
+            </div>
+            <div class="arch-col">
+              <div class="arch-box sm orange">📡 Branche Fréq.</div>
+              <div class="arch-arrow">↓</div>
+              <div class="arch-box sm">FFT 2D + DCT-II<br>→ 2 canaux 224×224</div>
+              <div class="arch-arrow">↓</div>
+              <div class="arch-box sm">LightCNN<br>[32,64,128,256]</div>
+              <div class="arch-arrow">↓</div>
+              <div class="arch-box sm">f<sub>f</sub> ∈ ℝ²⁵⁶</div>
+            </div>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-box green">Concat [f<sub>s</sub> ‖ f<sub>f</sub>] ∈ ℝ¹⁰²⁴</div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-box">Fusion MLP : 1024→512→128→1</div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-box">Temperature Scaling (T*)</div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-box orange">P(fake) ∈ [0, 1]</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title orange">Branche Fréquentielle — Formules</div>
+      <div class="block-body">
+        Les deepfakes laissent des <strong>artefacts invisibles</strong> à l'œil, détectables en fréquence.
+        <div class="formula">
+          <strong>FFT 2D</strong> (spectre log-magnitude centré) :<br>
+          S<sub>FFT</sub>(u,v) = log(1 + |ℱ{I<sub>gray</sub>}(u,v)|)
+        </div>
+        <div class="formula">
+          <strong>DCT-II</strong> (via extension symétrique + FFT) :<br>
+          S<sub>DCT</sub>(k) = Σ x<sub>n</sub> · cos(πk(2n+1) / 2N)
+        </div>
+        Les 2 cartes sont empilées en <strong>2 canaux</strong> → entrée LightCNN.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COL 3 : Entraînement -->
+  <div class="col">
+
+    <div class="block">
+      <div class="block-title">Entraînement</div>
+      <div class="block-body">
+        <strong>Optimiseur :</strong> AdamW avec LR différentiels :<br><br>
+        <table>
+          <tr><th>Groupe</th><th>LR</th></tr>
+          <tr><td>Backbone (ViT blocs)</td><td>10⁻⁵</td></tr>
+          <tr><td>Tête (LightCNN + MLP)</td><td>10⁻⁴</td></tr>
+        </table>
+        <br>
+        <strong>Scheduler :</strong> LinearWarmup (2 ep.) + CosineAnnealing (η<sub>min</sub>=10⁻⁶)<br>
+        <strong>AMP :</strong> autocast CUDA &nbsp;·&nbsp; Gradient clip ‖∇‖₂ ≤ 1<br>
+        <strong>Early stopping :</strong> patience = 5 epochs (AUC val)<br><br>
+        <strong>Perte combinée :</strong>
+        <div class="formula">ℒ = ℒ<sub>Focal</sub> + 0.1 · ℒ<sub>ECE</sub></div>
+        <div class="formula"><strong>Focal Loss</strong> (γ=2, α=0.25) :<br>
+          ℒ<sub>Focal</sub> = −α<sub>t</sub>(1−p<sub>t</sub>)² log(p<sub>t</sub>)</div>
+        <div class="formula"><strong>ECE différentiable</strong> (15 bins) :<br>
+          ℒ<sub>ECE</sub> = Σ<sub>m</sub> |B<sub>m</sub>|/n · |conf̄<sub>m</sub> − acc̄<sub>m</sub>|</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title green">Calibration — Temperature Scaling</div>
+      <div class="block-body">
+        <div class="formula">p<sub>cal</sub> = σ(z / T*) &nbsp;·&nbsp; T* = argmin<sub>T</sub> ℒ<sub>NLL</sub>(z/T, y)</div>
+        Optimisé par <strong>LBFGS</strong> sur la validation.<br>
+        T &gt; 1 → moins confiant &nbsp;·&nbsp; T &lt; 1 → plus confiant
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-title">Métriques d'évaluation</div>
+      <div class="block-body">
+        <table>
+          <tr><th>Métrique</th><th>Description</th></tr>
+          <tr><td><strong>AUC-ROC</strong></td><td>Aire sous courbe ROC</td></tr>
+          <tr><td><strong>ECE</strong></td><td>Erreur de calibration</td></tr>
+          <tr><td><strong>Accuracy</strong></td><td>Taux de classification</td></tr>
+          <tr><td><strong>AP</strong></td><td>Aire sous courbe PR</td></tr>
+          <tr><td><strong>TPR@95</strong></td><td>Seuil à 95% vrais-positifs</td></tr>
+        </table>
+        <br>
+        <strong>Robustesse :</strong>
+        <div class="metric-row">
+          <span class="metric">JPEG [30–100]</span>
+          <span class="metric">Flou σ∈{0..5}</span>
+          <span class="metric">Resize [0.25–1.0]</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ LIGNE 2 ══════════ -->
+<div class="bottom">
+
+  <!-- Résultats -->
+  <div class="col">
+    <div class="block">
+      <div class="block-title green">Résultats attendus</div>
+      <div class="block-body">
+        <table>
+          <tr><th>Dataset</th><th>AUC</th><th>Acc.</th><th>ECE</th></tr>
+          <tr><td>FaceForensics++</td><td>~0.98</td><td>~0.95</td><td>&lt;0.03</td></tr>
+          <tr><td>Celeb-DF v2</td><td>~0.92</td><td>~0.88</td><td>&lt;0.05</td></tr>
+          <tr><td>DF40</td><td>~0.89</td><td>~0.85</td><td>&lt;0.06</td></tr>
+          <tr><td>WildDeepfake</td><td>~0.87</td><td>~0.83</td><td>&lt;0.07</td></tr>
+        </table>
+        <br>
+        <em style="font-size:.75rem">Valeurs indicatives — à compléter après entraînement.</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grad-CAM -->
+  <div class="col">
+    <div class="block">
+      <div class="block-title orange">Explicabilité — Grad-CAM sur ViT</div>
+      <div class="block-body">
+        <strong>Attention Rollout</strong> + gradients localisent les zones suspectes du visage.
+        <div class="gradcam-demo">
+          <div class="face-box face-real">🖼️<br>Image<br>Fake<br><small>P=0.94</small></div>
+          <div class="arrow-big">→</div>
+          <div style="font-size:.72rem;text-align:center;color:#00439c;font-weight:700">Grad-CAM<br>ViT</div>
+          <div class="arrow-big">→</div>
+          <div class="face-box face-heat">🔥<br>Zones<br>suspectes</div>
+        </div>
+        Superposition α=0.5 sur l'image originale.<br>
+        Cible : dernier bloc ViT (block 11).
+      </div>
+    </div>
+  </div>
+
+  <!-- Perspectives -->
+  <div class="col">
+    <div class="block">
+      <div class="block-title">Perspectives &amp; Références</div>
+      <div class="block-body">
+        <ul>
+          <li>Fine-tuning complet DINOv2 sur données massives</li>
+          <li>Datasets diffusion (Stable Diffusion, FLUX, Midjourney)</li>
+          <li>Détection vidéo temporelle (ViViT)</li>
+          <li>Déploiement API REST + Docker</li>
+          <li>Robustesse adversariale (FGSM, PGD)</li>
+          <li>Distillation pour inférence mobile</li>
+        </ul>
+        <br>
+        <div style="font-size:.7rem;color:#555;line-height:1.7">
+          [1] Caron et al. (2021). <em>Emerging properties in self-supervised ViT.</em> ICCV.<br>
+          [2] Lin et al. (2017). <em>Focal Loss for Dense Object Detection.</em> ICCV.<br>
+          [3] Guo et al. (2017). <em>On calibration of modern neural networks.</em> ICML.<br>
+          [4] Rossler et al. (2019). <em>FaceForensics++.</em> ICCV.<br>
+          [5] Li et al. (2020). <em>Celeb-DF.</em> CVPR.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>📁 github.com/anessrb/deepfakedetection</span>
+  <span>PyTorch ≥2.1 · timm ≥0.9 · albumentations · scikit-learn</span>
+  <span>M2 IA · 2026</span>
+</footer>
+
+</div>
+</body>
+</html>
